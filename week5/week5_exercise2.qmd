@@ -1,0 +1,185 @@
+---
+title: "Week 5 - Exercise 2"
+author: "Simen Løkken"
+format: html
+editor: visual
+---
+
+## Set environment and load packages
+
+```{r setup}
+
+knitr::opts_chunk$set(
+  warning = F,
+  message = F
+)
+```
+
+```{r}
+
+library(tidyverse)
+library(purrr)
+
+theme_set(theme_light())
+```
+
+## Read and clean data
+
+```{r}
+
+data <- read_csv("https://www.math.ntnu.no/emner/ST2304/2024v/Module04/Ztimes100.csv")
+
+data <- data |> 
+  select(-...1) |> 
+  mutate(
+    athlete = as_factor(athlete),
+    time_diff = times_after - times_before
+  )
+```
+
+## Exercises
+
+### A1. 
+
+See pipeline in code chunk above.
+
+The data needs to be paired like this because it is the difference in times we are interested in. In order to take the decision: **run or not run**, we have to know if the difference in times pre and post infection. We run a so-called paired t-test.
+
+### A2.
+
+Parts of the question are answered in A1. The criteria I would use is the maximum likelihood estimate in a T distribution (i.e., the mean) and the CI we compute for the uncertainty.
+
+To solve this problem we could run a linear model with lm() or use t.test(), they are both the same in this case.
+
+### A3.
+
+```{r}
+mod <- lm(time_diff ~ 1, data = data)
+```
+
+```{r}
+summary(mod)
+```
+
+Just plotted this for fun.
+
+```{r}
+
+data |> 
+  pivot_longer(
+    cols = c(times_before, times_after),
+    names_to = "occassion",
+    values_to = "time"
+  ) |> 
+  mutate(
+    occassion = as_factor(occassion)
+  ) |> 
+  select(athlete, occassion, time) |> 
+  ggplot(aes(x = occassion, y = time)) +
+  geom_point() +
+  stat_summary(
+    fun.data = mean_cl_normal,
+    geom = "point",
+    width = 0.2,
+    size = 4,
+    color = "red"
+  ) +
+  theme(panel.grid = element_blank())
+```
+
+### A4.
+
+See below for computed CI'. CI = [0.704, 1.366]. 
+
+Our MLE for the difference in mean time is 1.0350 seconds, pre-infected people are faster on average.
+
+The CI indicates however that there is some uncertainty, ranging from ~ 0.7 to ~ 1.4 seconds faster than infected people using an alpha level of 0.05. We are 95 % confident that the true value lies in this interval, and if we repeated the sampling a lot of times, 95 % of the times would the interval contain the true value.
+
+```{r}
+
+confint(mod)
+```
+
+```{r}
+
+t.test(x = data$time_diff)
+```
+
+### A5.
+
+I would argue that it is better to try and outrun the zombies instead of being sitting ducks in the office. 
+
+On average we are 1.035 seconds faster with a CI 95 range of 0.7 to 1.4 seconds faster (MLE and CI). 
+
+However, in order to take a more safe decision, I would try to collect information on the group I was with using proxy's for speed (body weight, previous exercise experience and subjective thoughts on their speed). This way we could "guesstimate" how far away from the mean in negative direction each individual are. This is clever based on the plot in A1., there can be some zombies that are faster.
+
+### B1. 
+
+In order to model with the normal distribution, we should have a sample size of > 30 and we must know the population variance. This scenario is not so usual because parameters are often unknown.
+
+In this case, our sample size is low and we do not know the population variance beforehand, we have to estimate it from our data. Therefore, a t-distribution is a more suitable choose.
+
+### B2.
+
+The normal distribution have two unknown parameters: mu (mean) and sigma (standard deviation). 
+
+```{r}
+
+source("https://www.math.ntnu.no/emner/ST2304/2024v/Module04/NormalDistFunctions.R")
+
+diff_sd <- sd(data$time_diff)
+diff_mean <- mean(data$time_diff)
+
+data_b2 <- tibble(
+  means = seq(0.5, 1.5, length = 100),
+  log_likehoods = map_dbl(
+    .x = means,
+    .f = CalcNormlogLh,
+    mu = mean(data$time_diff),
+    sigma = sd(data$time_diff)
+  )
+)
+
+data_b2 |> 
+  ggplot(aes(x = means, y = exp(log_likehoods))) +
+  geom_point()
+
+```
+
+### B3.
+
+```{r}
+
+standard_error_norm <- sd(data$time_diff)/sqrt(length(data$time_diff))
+
+# Then + or - 1.96 times the standard error from the 
+# maximum likelihood estimate
+CI_upper <- mean(data$time_diff) + 1.96*standard_error_norm
+CI_lower <- mean(data$time_diff) - 1.96*standard_error_norm
+
+# display the confidence intervals to 2 decimal places
+round(c(CI_lower, CI_upper),2)
+```
+Compared to the CI computed from the t-distribution, they are very much similar.
+
+T-distribution: 
+
+[0.70, 1.37]
+
+Normal distribution:
+
+[0.75, 1.32].
+
+### B5.
+
+Yes, the normal distribution is a good model for the uncertainty for the parameter estimate. Compared to the t-distribution it is very close, but the t-distribution does in my understanding better account for fat tails and therefore have a wider CI implying more uncertainty. 
+
+In a situation where we have larger N and and a known variance the normal distribution is more appropriate.
+
+### B6.
+
+It would not have changed my answer, I would still run. If something, it would have led me more towards running because the CI is a little bit smaller.
+
+### C1.
+
+For starters, I would like much more observations. That would make our parameter estimations better and set us up for a better decision-making process. I would also have more explainer variables such as height, mass and so on to better predict how fast the actual people in the group are. I'm not sure this weakness applies to the study design, but the mean is a mean and not necessarily a good measure for the whole group. We could for example lose some members to a zombie if they are an outlier in the negative direction.

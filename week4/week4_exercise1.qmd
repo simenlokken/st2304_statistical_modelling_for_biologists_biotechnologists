@@ -1,0 +1,250 @@
+---
+title: "Week 4: Exercise 1"
+author: "Simen Løkken"
+format: html
+editor: visual
+---
+
+## Set environment and load packages
+
+```{r setup}
+
+knitr::opts_chunk$set(
+  warning = F,
+  message = F
+)
+```
+
+```{r}
+
+library(tidyverse)
+
+theme_set(theme_light())
+```
+
+## Read and clean data
+
+```{r}
+
+data <- read_csv("https://www.math.ntnu.no/emner/ST2304/2024v/Module03/DragonEggData.csv")
+```
+
+```{r}
+
+data <- data |> 
+  janitor::clean_names() |> 
+  mutate(
+    sex = as_factor(sex),
+    sex = case_when(
+      sex == 0 ~ "Male",
+      sex == 1 ~ "Female"
+    )
+  )
+```
+
+## Exercises
+
+### Part A
+
+#### A1.
+
+```{r}
+
+data |> 
+  ggplot(aes(x = sex)) +
+  geom_bar()
+```
+
+#### A2.
+
+The female proportion is:
+
+```{r}
+
+data |> 
+  summarise(
+    total = n(),
+    female_count = sum(sex == "Female"),
+    female_prop = female_count / total
+  ) |> 
+  pull(female_prop)
+```
+
+#### A3.
+
+##### 1,2 and 4.
+
+```{r}
+
+num_trials <- 1e2
+fem_eggs <- 34
+
+data_a3 <- tibble(
+  p_values = seq(0.1, 0.9, length.out = 1e3),
+  likelihood = dbinom(fem_eggs, num_trials, p_values)
+)
+
+data_a3 |> 
+  ggplot(aes(x = p_values, y = likelihood)) +
+  geom_point(size = 0.5) +
+  labs(x = "Candidate values for parameter p", y = "Likelihood")
+```
+
+We can find the MLE by optimizing. We can also find it analytically by using logarithms, some basic algebra and derivatives. The gradient would be set to zero to find the highest point on the curve.
+
+```{r}
+
+likelihood_function <- function(p) {
+  dbinom(34, 1e2, p)
+}
+
+mle <- optimise(
+  likelihood_function,
+  interval = c(0, 1),
+  maximum = TRUE
+)
+
+mle[1]
+```
+
+#### A5.
+
+Because we have no uncertainty. We should always compute a CI to account for the uncertainty and thereby get a fuller picture of our estimate.
+
+#### A6.
+
+The standard error is a measure of the accuracy in which a sample represents a population. In this case, how well does the sample of 100 eggs (34 of those female) represent the whole population of dragon eggs.
+
+#### A7.
+
+I have used the exact binom test and the approx. prop test:
+
+Binom:
+
+```{r}
+
+binom.test(34, 100)$conf.int
+
+```
+
+Normal approx:
+
+```{r}
+
+prop.test(34, 100)$conf.int
+```
+
+The dragons do have a skewed sex ratio (if we use a 0.05 alpha level) because our CI does not contain 50 for female eggs. We can be quite sure about this since it is somewhat far away from 50 as well, by almost 6 eggs.
+
+### Part B
+
+```{r}
+
+observed_abundance <- 29
+
+data_b <- tibble(
+  lambdas = seq(1, 70, 1),
+  likelihoods = dpois(x = observed_abundance, lambda = lambdas)
+)
+
+data_b |> 
+  ggplot(aes(x = lambdas, y = likelihoods)) +
+  geom_point() +
+  labs(
+    y = "Likelihood", 
+    x = "Lambda (mean)"
+  )
+```
+
+```{r}
+
+mle_pois <- optimise(
+  dpois,
+  lower = 0,
+  upper = 70,
+  x = observed_abundance,
+  maximum = TRUE
+)
+
+mle_pois
+```
+
+```{r}
+
+poisson.test(29)$conf.int
+```
+
+#### B1.
+
+The confidence interval for the Poisson distribution represent the range of likely count of abundance if we repeated the sampling several times, in this case with a 0.95 precision. It is important to not interpret this as that we are 95 per cent sure that we have the true values (29 in our case) but instead that we if we repeated this sampling over and over again our value would be in between the range 95 % of the times.
+
+#### B2.
+
+```{r}
+
+lambdas <- seq(1, 70, 1)
+observed_abundance
+likelihoods.Pois <- dpois(x=observed_abundance, lambdas)
+
+likelihoods.approx.Pois <- dnorm(lambdas, mle_pois$maximum,
+                                 sqrt(mle_pois$maximum)) 
+likelihoods.approx.Pois <- likelihoods.approx.Pois/max(likelihoods.approx.Pois)
+
+plot(lambdas, likelihoods.Pois, type="l", ylab="Likelihood", xlab="Probability")
+lines(lambdas, likelihoods.approx.Pois*max(likelihoods.Pois), col="blue")
+
+stderr_Pois <- sqrt(mle_pois$maximum) # standard deviation as normal approximation
+CI_lower <- mle_pois$maximum - 1.96*stderr_Pois
+CI_upper <- mle_pois$maximum + 1.96*stderr_Pois
+ApproxCI <- round(c(CI_lower, CI_upper),2)
+ApproxCI
+
+# Exact CIs by knowing the maths
+## You do not need to know this!!! It's just here so we can plot them.
+ExactCI <- qchisq(p=c(0.025, 0.975), df = 2*mle_pois$maximum)/2
+
+# Mark on the plot - can do with lines, polygons or points
+# This plots a polygon for the exact confidence intervals
+InExactCI <- lambdas > ExactCI[1] & lambdas < ExactCI[2]
+
+# This code shades the plot under the curve and between the exact confidence intervals
+polygon(x=c(lambdas[InExactCI], max(lambdas[InExactCI]), min(lambdas[InExactCI])),
+        y=c(likelihoods.Pois[InExactCI], 0,0), border=NA, col="grey70")
+
+# YOU ONLY NEED TO KNOW HOW TO PLOT POLYGONS IF YOU ARE INTERESTED
+
+# Then mark on the plot approximate intervals
+# can do with lines, polygons or points
+# This one is a line
+abline(v=29) # MLE line
+abline(v=c(CI_lower, CI_upper), col="blue") # CI lines
+text(x=10, y=0.04, labels="Lower\nCI", col="blue")
+text(x=50, y=0.04, labels="Upper\nCI", col="blue")
+
+# Adds a legend (key) to the plot in the top right corner
+# Labelled Exact CI and Approx CI, with a grey and blue filled square and no line around the edge (bty = 'n')
+legend("topright", c("Exact CI", "Approx CI"), 
+       fill=c("grey70", "blue"), bty='n')
+```
+
+Yes, I would argue that the normal approx. CI does a good job compared to the exact CI here. The difference is small.
+
+#### C1.
+
+The question the government asked was to decrease population, increase population or status quo (do nothing). In previous work we know that an abundance of 35 individuals is needed to maintain population and an abundance of more than 50 individuals will start pressure on resources and risks of fire.
+
+We counted 29 dragons that visited the feeding station in a single day (this our abundance). The CI gives us an interval from 19 to 40 dragons with 29 as our maximum likelihood estimate.
+
+As we need a population of 35 maintain the population, we have a bit few dragons for that. **So, the government should manage the population positively to increase it a little bit**, but they have to be wary not to increase it to much so its over 50 individuals.
+
+Some biological reasons to mention is that there are less female eggs than male eggs indication that fewer dragons can give birth to new dragons. Future studies should record failures so we can use the time in our Poisson modelling.
+
+### Part D
+
+### D1.
+
+I have an agreement with Bert so I did it by myself. I think it was a very fun exercise.
+
+### D2.
+
+Intepretation on statistical concepts.
