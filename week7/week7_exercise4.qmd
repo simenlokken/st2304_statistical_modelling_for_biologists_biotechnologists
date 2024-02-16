@@ -1,0 +1,301 @@
+---
+title: "Week 7 - Exercise 4"
+author: "Simen Løkken"
+format: html
+editor: visual
+editor_options: 
+  chunk_output_type: console
+---
+
+## Set environment and load packages
+
+```{r setup}
+
+knitr::opts_chunk$set(
+  warning = F,
+  message = F
+)
+```
+
+```{r}
+
+library(dplyr)
+library(tidyr)
+library(tibble)
+library(readr)
+library(ggfortify)
+library(broom)
+library(patchwork)
+
+theme_set(theme_minimal())
+```
+
+## Part A
+
+```{r}
+
+chicago_crime <- read_csv("https://www.math.ntnu.no/emner/ST2304/2024v/Module05/NoFreezeTempCrimeChicago.csv")
+
+chicago_crime <- chicago_crime |> 
+  janitor::clean_names()
+```
+
+```{r}
+
+chicago_crime |> 
+  ggplot(aes(temp_c, crime)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = F)
+```
+
+A second degree polynomial just for interest in how it looked.
+
+```{r}
+
+chicago_crime |> 
+  ggplot(aes(temp_c, crime)) +
+  geom_point() +
+  geom_smooth(method = "lm", formula = y ~ poly(x, 2), se = F)
+```
+
+### A1.
+
+The predicted daily number of crimes are 891 (rounded up), I have not yet heard of someone doing half a crime. The prediction interval is 760-1021. 
+
+```{r}
+
+crime_mod <- lm(crime ~ temp_c, data = chicago_crime)
+
+predict_y <- function(alpha, beta, x) {
+  y <- alpha + beta * x
+  return(y)
+}
+
+predict_y(
+  crime_mod$coefficients[1],
+  crime_mod$coefficients[2],
+  x = -10
+)
+
+new_data <- tibble(temp_c = -10)
+
+crime_preds <- predict(
+  crime_mod,
+  new_data,
+  interval = "prediction"
+) |> as_tibble()
+
+crime_preds  
+```
+
+### A2.
+
+I would recommend based on this model to have 890 police officers at work that day. One could have been more liberal or conservative (going with fewer or more), and one could argue that being conservative is important because there is people's safety at hand. I however believe (based on my own belief, yes very robust) that this model exaggerates the number of crimes for degrees < 0 degrees Celsius. I therefore think that going with the the best prediction of 891 is conservative enough. A prediction from a model with data < 0 degrees would be more appropriate.
+
+## Part B
+
+```{r}
+
+chicago_crime_full <- read_csv("https://www.math.ntnu.no/emner/ST2304/2024v/Module06/TempCrimeChicago.csv")
+
+chicago_crime_full <- chicago_crime_full |> 
+  janitor::clean_names()
+```
+
+### B1.
+
+```{r}
+
+chicago_crime_full |> 
+  ggplot(aes(temp_c, crime)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = F)
+```
+
+```{r}
+
+chicago_crime_full |> 
+  ggplot(aes(temp_c, crime)) +
+  geom_point() +
+  geom_smooth(method = "lm", formula = y ~ poly(x, 2), se = F)
+```
+
+```{r}
+
+crime_mod_full <- lm(crime ~ temp_c, data = chicago_crime_full)
+```
+
+### B2.
+
+I did look before trying to fit both a straight line and second degree polynomial, and it works OK, but far from perfect. The second degree polynomial does a better job of describing crime ~ temperature. The straight line overestimates from below zero to 0 and then underestimates from 5 ish to 45 degrees. The 2 degree poly does a much better job at low degrees but does also underestimate from 0 till 30-40, however less than the straight line.
+
+### B3.
+
+I choose to make some of my own model plots for fun :D
+
+Create augmented tibble from model:
+
+```{r}
+
+aug_crime_mod_full <- augment(crime_mod_full)
+```
+
+```{r}
+
+aug_crime_mod_full |> 
+  ggplot(aes(.fitted, .resid)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = F) +
+  labs(
+    title = "Residuals vs. fitted",
+    x = "Fitted values",
+    y = "Residuals"
+  )
+```
+
+The residuals vs. fitted plot let's us assess assumptions of the linear model, such as linearity and equal variance. It is clear from this plot that there is not a perfect linearity here, it is rather a curvature. This is in line with what I expected based on the plot in **B1.** I would expect the points to be randomly scattered around the plot with no clear structure and with equally many points across residuals = 0 if the data were linear and normally distributed. 
+
+### B4.
+
+```{r}
+
+aug_crime_mod_full |> 
+  ggplot(aes(sample = .std.resid)) +
+  geom_qq() +
+  geom_qq_line()
+```
+
+This plot let's us assess normality. We see here that we have thick tails (lots of outliers). If our Q-Q-plot would have been "perfect", all the points would fall perfectly on the line.
+
+### B5.
+
+```{r}
+
+aug_crime_mod_full |> 
+  mutate(index = 1:length(.cooksd)) |> 
+  ggplot(aes(index, .cooksd)) +
+  geom_point()
+```
+
+
+Cook's Distance plot let's us assess the influence of individual observations in our data. We see that observation 48 I think is highly influential, removing it would probably influence the fit of our model.
+
+### B6.
+
+I would have done several things. First of all I would have fitted a second degree polynomial instead of a straight line due to the curvature in the data. I would do that without removing some observations. I would also try to remove the observations that clearly are outliers with crime rates around 1800-1900 and around 1000, and then try to fit a straight line to see if it then fits better than the second degree polynomial. If it's reasonable to assume these are outliers and then remove them, the straight line is a better choice in terms of interpretation IF it fits well. We are supposed to advice the police (non-academics nor statisticians) so easy interpretation is something to value.
+
+## Part C
+
+### C1.
+
+I have located the rows and filtered them out and plotted the data again.
+
+```{r}
+
+chicago_crime_full_new <- chicago_crime_full |> 
+  filter(!crime < 1050 & !crime > 1750)
+
+chicago_crime_full_new |> 
+  ggplot(aes(temp_c, crime)) +
+    geom_point()
+```
+
+### C1.
+
+Well, if it they are in fact typos/other irregularities, they present a picture that is not true and it affects our model. End result is that it can it can provide flawed decision-making.
+
+If they are in true observations, it is the opposite, we remove true observations which should be included to make predictions that are based on what we observe in real-life. The idea behind statistical modelling is to use mathematics to describe the world and make decisions when we can't investigate huge systems effectively (we can't sample all the crows in the entire world for example).
+
+We should consider both these phenomenons when considering removing outliers.
+
+### C2.
+
+### C3. 
+
+I did it in **C1.** The data is still curved.
+
+### C4.
+
+```{r}
+
+quad_crime_mod_full <- lm(crime ~ poly(temp_c, 2), data = chicago_crime_full_new)
+```
+
+```{r}
+
+chicago_crime_full_new |> 
+  ggplot(aes(temp_c, crime)) +
+  geom_point() +
+  geom_smooth(method = "lm", formula = y ~ poly(x, 2), se = F)
+```
+
+### C5.
+
+```{r}
+
+aug_quad_crime_mod_full <- augment(quad_crime_mod_full)
+
+p1 <- aug_quad_crime_mod_full |> 
+  ggplot(aes(.fitted, .resid)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = F) +
+  labs(
+    title = "Residuals vs. fitted",
+    x = "Fitted values",
+    y = "Residuals"
+  )
+
+p2 <- aug_crime_mod_full |> 
+  ggplot(aes(.fitted, .resid)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = F) +
+  labs(
+    title = "Residuals vs. fitted",
+    x = "Fitted values",
+    y = "Residuals"
+  )
+```
+
+```{r}
+
+p1
+```
+
+```{r}
+
+p1 + p2
+```
+
+The model does have a significantly better fit now. There is no structure in the residuals vs. fitted plot and there are equal amount of points on each side of residuals = 0.
+
+### C7.
+
+```{r}
+
+new_data <- tibble(temp_c = 14)
+
+predictions <- predict(
+  quad_crime_mod_full,
+  new_data,
+  interval = "prediction"
+)
+
+predictions
+```
+
+Yes, this changes my recommendation on the number of police. With this improved model, I would recommend to have 1338 police offers on duty instead of 891. Lol, obviously I failed miserably in assuming that the model underestimated the effect of cold temperatures. I guess that's a part of the learning process. 
+
+The model now has a much better fit and I trust it much more than the old model. The 95 PI is also quite narrow, and I don't think this model has any weaknesses so it should force us to be more conservative and recommending a number closer to the upper limit of the 95 PI.
+
+### Part E
+
+Again, really fun exercise!! I think this course is great!
+
+There are now concepts I'm particularly unsure of (I think), but please provide feedback on my interpretation and on statistical nuances I haven't got right or haven't thought of.
+
+
+
+
+
+
+

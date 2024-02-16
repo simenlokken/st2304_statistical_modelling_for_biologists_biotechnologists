@@ -1,0 +1,396 @@
+---
+title: "Week 5: Exercise 3"
+author: "Simen Løkken"
+format: html
+editor: visual
+editor_options: 
+  chunk_output_type: console
+---
+
+## Set environment and load packages
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(
+  warning = F,
+  message = F
+)
+```
+
+```{r}
+
+# Taking your feedback into serious account, great tip not loading all of the Tidyverse
+
+library(tidyr)
+library(tibble)
+library(janitor)
+library(forcats)
+library(dplyr)
+library(ggplot2)
+library(readr)
+library(purrr)
+library(patchwork)
+
+theme_set(theme_light())
+```
+
+## Question 1
+
+```{r}
+
+dragon_fire <- read_csv(
+  "https://www.math.ntnu.no/emner/ST2304/2024v/Module05/DragonFire.csv"
+  )
+
+dragon_fire <- dragon_fire |> 
+  select(-...1) |> 
+  clean_names()
+```
+
+### 1.
+
+```{r}
+
+dragon_fire |> 
+  ggplot(aes(x = size, y = distance)) +
+  geom_point()
+```
+
+```{r}
+
+mod <- lm(distance ~ size, data = dragon_fire)
+coef(mod)
+```
+
+```{r}
+
+# I could have used the intercept and beta estimate to manually compute the line, but I assumed that geom_smooth() was OK since you used abline(lm(x ~ y)) in the exercise instructions.
+
+dragon_fire |> 
+  ggplot(aes(x = size, y = distance)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = F)
+```
+
+```{r}
+
+alpha_hat <- coef(mod)[1]
+beta_hat <- coef(mod)[2]
+sigma_hat <- summary(mod)$sigma
+
+simulate_data <- function(alpha, beta, sigma, x) {
+  slope <- alpha + beta * x
+  y_sim <- rnorm(length(x), slope, sigma)
+  model <- lm(y_sim ~ x)
+  coef(model)[2]
+}
+```
+
+### 1.1
+
+```{r}
+
+replicate_beta <- tibble(
+  replicate_beta = replicate(
+    1e3,
+    simulate_data(
+    alpha_hat,
+    beta_hat,
+    sigma_hat,
+    dragon_fire$size
+    )
+  )
+)
+
+replicate_beta |> 
+  ggplot(aes(x = replicate_beta)) +
+  geom_histogram(bins = 50)
+```
+
+```{r}
+
+quantile(
+  replicate_beta$replicate_beta,
+  c(0.025, 0.975)
+)
+
+```
+
+```{r}
+
+mean(replicate_beta$replicate_beta)
+```
+
+```{r}
+
+beta_hat
+```
+
+### 1.2
+
+```{r}
+
+confint(mod)
+```
+
+The confidence intervals differ slightly. As far as I understand, they differ because the confint(mod) computes the CI from the MLE used in the model, while the quantile with simulated data computes it using simulated data. There will always be some randomness when doing simulations.
+
+### 1.3
+
+A CI is interpreted as:
+
+If we repeat the modelling process a lot of times, the true parameter value will be inside the CI a time equivalent to the level we choose, often 0.95, which is corresponding to 95 out of a 100 times.
+
+### 1.4
+
+```{r}
+
+predict_y <- function(alpha, beta, x) {
+  y <- alpha + beta * x
+  return(y)
+}
+
+predict_y(
+  alpha_hat,
+  beta_hat,
+  x = 12
+)
+```
+
+### 1.5
+
+```{r}
+
+simulate_prediction <- function(alpha, beta, sigma, x, x_pred) {
+  slope <- alpha + beta * x
+  y_sim <- rnorm(length(x), slope, sigma)
+  model <- lm(y_sim ~ x)
+  pred_mu <- coef(model)[1] + coef(model)[2] * x_pred
+  return(pred_mu)
+}
+
+rep_pred <- tibble(
+  rep_pred = replicate(
+    1e3,
+    simulate_prediction(
+      alpha_hat,
+      beta_hat,
+      sigma_hat,
+      x = dragon_fire$size,
+      x_pred = 12
+    )
+  )
+)
+
+rep_pred |> 
+  ggplot(aes(x = rep_pred)) +
+    geom_histogram(bins = 50)
+```
+
+```{r}
+
+quantile(rep_pred$rep_pred, c(0.025, 0.975))
+```
+
+### 1.6
+
+In the first function, simulate_prediction, we only account for uncertainty in the process of simulating y (fire distance) because we are not re-sampling our dragons every time. If we shall re-sample our dragons, there will also be uncertainty and that will be accounted for when we we pick random values from a normal distribution in simulate_prediction_2. 
+
+### 1.7
+
+The CI for simulate_prediction is much wider, see line 239-246. I assume this is because we now have more uncertainty due to the difference between function 1 and 2 (i.e., rnorm x 2 in function 2).
+
+```{r}
+
+simulate_prediction_2 <- function(alpha, beta, sigma, x, x_pred) {
+  slope <- alpha + beta * x
+  y_sim <- rnorm(length(x), slope, sigma)
+  model <- lm(y_sim ~ x)
+  pred_mu <- coef(model)[1] + coef(model)[2] * x_pred
+  new <- rnorm(length(x_pred), pred_mu, sigma)
+  return(new)
+}
+
+rep_pred_2 <- tibble(
+  rep_pred_2 = replicate(
+    1e3,
+    simulate_prediction_2(
+      alpha_hat,
+      beta_hat,
+      sigma_hat,
+      x = dragon_fire$size,
+      x_pred = 12
+    )
+  )
+)
+
+rep_pred_2 |> 
+  ggplot(aes(rep_pred_2)) +
+  geom_histogram(bins = 50)
+  
+```
+
+```{r}
+
+quantile(rep_pred_2$rep_pred_2, c(0.025, 0.975))
+```
+
+```{r}
+
+low_1.5 <- quantile(rep_pred$rep_pred, c(0.025, 0.975))[1]
+high_1.5 <- quantile(rep_pred$rep_pred, c(0.025, 0.975))[2] 
+
+low_1.7 <- quantile(rep_pred_2$rep_pred_2, c(0.025, 0.975))[1]
+high_1.7 <- quantile(rep_pred_2$rep_pred_2, c(0.025, 0.975))[2]
+
+high_1.5 - low_1.5
+high_1.7 - low_1.7
+```
+
+### 1.8
+
+The CI tells us something about the uncertainty of our data. In this case, it tells us that if we sampled our data many times, 95 % of the times we would have gotten values that lies between our lower and upper end of the CI.
+
+## Question 2
+
+### 2-2.4
+
+```{r}
+
+harry_potter_books <- tibble(
+  book = factor(c(
+    "Philosopher's Stone", "Chamber of Secrets", "Prizoner of Azkaban",
+    "Goblet of Fire","Order of the Phoenix", "Half-Blood Prince", "Deathly Hallows"),
+    levels = c("Philosopher's Stone", "Chamber of Secrets", "Prizoner of Azkaban",
+    "Goblet of Fire","Order of the Phoenix", "Half-Blood Prince", "Deathly Hallows"),
+    ordered = TRUE
+    ),
+  length = c(223, 251, 317, 636, 766, 607, NA),
+  date = c(1997, 1998, 1999, 2000, 2003, 2005, 2007),
+  book_order = c(1:7)
+)
+
+harry_potter_books |> 
+  ggplot(aes(book, length)) +
+  geom_point() +
+  labs(
+    x = NULL,
+    y = "Runtime"
+    )
+```
+
+```{r}
+
+hp_mod <- lm(length ~ book_order, data = harry_potter_books)
+
+hp_mod
+```
+
+The books are getting longer on average (before checking the CI)! The beta estimate is 108.11 meaning that the books are getting 108 pages longer on average (increase in y when x increases with 1, in this case x increases with 1 means one book).
+
+```{r}
+
+confint(hp_mod)
+```
+
+The 95 CI is between 26 and 191, so we can be confident that the books are in fact getting longer! However, the CI is quite wide so many values of beta are reasonable here.
+
+```{r}
+
+hp_mod$coefficients[1]
+
+predict_y(hp_mod$coefficients[1], hp_mod$coefficients[2], x = 8)
+
+```
+
+Using the predict_y function I created earlier, the model coefficients predicts the length of the eight book to be 953 pages long.
+
+```{r}
+
+eight_book <- tibble(book_order = 8)
+
+predict(hp_mod, eight_book, interval = "prediction")
+```
+
+The prediction interval spans from 428 pages to 1479 pages.
+
+The prediction was not good, it missed with more than 300 pages on its best estimate. Making predictions from linear regression models is difficult which is examplified by the very wide prediction interval!
+
+## Question 3
+
+```{r}
+
+chicago_crime <- read_csv(
+  "https://www.math.ntnu.no/emner/ST2304/2024v/Module05/NoFreezeTempCrimeChicago.csv"
+  )
+
+chicago_crime <- chicago_crime |> 
+  clean_names()
+```
+
+### 3.1
+
+```{r}
+
+chicago_crime |> 
+  ggplot(aes(x = temp_c, y = crime)) +
+  geom_point()
+```
+
+The pattern can be described as linear or slightly curved if you ignore the two outliers at around y = 1300.
+
+### 3.2
+
+The overall effect of temperature on crime seems to be positive. When temperature increases, so does crime rates.
+
+### 3.3
+
+Yup, the two observations at approx [32, 1280] and [28, 1340].
+
+### 3.4
+
+Yup, it seems like a reasonable idea to fit a linear model to this data because the a straight line would explain the behavior between crime and temp. However, It could be an idea to also try a second degree polynomial due to the slight curvature. 
+
+```{r}
+
+crime_mod <- lm(crime ~ temp_c, data = chicago_crime)
+```
+
+### 3.5
+
+The coefficient for temperature is 5.57, and the CI for it is [3.78, 7.36].
+
+```{r}
+
+confint(crime_mod)
+```
+
+### 3.6
+
+The model indicates that crime rates increases as a function of temperature, and the effect size is 5.57 crimes per degree Celsius increase.
+
+### 3.7
+
+```{r}
+
+predict_y(crime_mod$coefficients[1], crime_mod$coefficients[2], x = 3)
+```
+
+It will increase the crime numbers to 963.
+
+### 3.8
+
+```{r}
+
+predict_y(crime_mod$coefficients[1], crime_mod$coefficients[2], x = -10)
+```
+
+The crime rate will be 891.
+
+## Feedback
+
+I think this exercise went great. Very cool tasks and I can clearly see the relevance of learning this stuff.
+
+I think I improved in not using built-in R functions all the time.
+
+I'm pretty sure of all the concepts in basic linear modelling, but looking forward to generalized linear models :D
