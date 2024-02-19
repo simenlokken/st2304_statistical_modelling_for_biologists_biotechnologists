@@ -1,0 +1,216 @@
+---
+title: "Week 5: The Normal Distribution"
+author: "Simen Løkken"
+format: html
+editor: visual
+---
+
+## Set environment and load packages
+
+```{r setup}
+
+knitr::opts_chunk$set(
+  warning = F,
+  message = F
+)
+```
+
+```{r}
+
+library(dplyr)
+library(readr)
+library(purrr)
+library(ggplot2)
+library(janitor)
+
+theme_set(theme_minimal())
+```
+
+## Module
+
+### Some important probability remaks
+
+An assumption for doing modelling with several data points is to assume that they are independent of each other, i.e., Pr(x1, x2) = Pr(x1) * Pr(x2).
+
+The likelihood is the probability of each data point as a function of the parameters, we calculate the likelihood for the parameters as a function of the data (Xi's) by multiplying the probabilities.
+
+### Groundhoug day
+
+Read data:
+
+```{r}
+
+groundhog_data <- 
+  read_csv("https://www.math.ntnu.no/emner/ST2304/2024v/Module04/GroundhogData.csv")
+
+groundhog_data <- groundhog_data |> 
+  clean_names() |> 
+  select(-x1)
+```
+
+Investigate temperature distribution:
+
+```{r}
+
+groundhog_data |> 
+  ggplot(aes(temperature)) +
+  geom_histogram(fill = "royalblue", color = "black", alpha = 0.9)
+```
+
+We are trying to summarise the data as a distribution so we can ask detailed questions, develop theories about it and use it for predictions with maths and probability from the distribution we believe the data follows.
+
+We often log-transform the normal distribution for easier mathematics.
+
+### Normal distribution exercises
+
+Source functions:
+
+```{r}
+
+source("https://www.math.ntnu.no/emner/ST2304/2024v/Module04/NormalDistFunctions.R")
+```
+
+#### 1.
+
+```{r}
+
+mean_temp <- mean(groundhog_data$temperature)
+sd_temp <- sd(groundhog_data$temperature)
+
+sim_data <- tibble(
+  sims = rnorm(1e3, mean_temp, sd_temp)
+)
+
+sim_data |> 
+  ggplot(aes(sims)) +
+  geom_histogram(fill = "royalblue", color = "black", alpha = 0.9)
+
+```
+  
+#### 2, 3 & 4.
+
+```{r}
+
+sim_data <- tibble(
+  at_data = seq(min(groundhog_data$temperature), max(groundhog_data$temperature), length = 20),
+  dens_data = dnorm(at_data, mean_temp, sd_temp),
+  cum_data = pnorm(at_data, mean_temp, sd_temp)
+)
+
+sim_data |> 
+  ggplot(aes(at_data, dens_data)) +
+  geom_path()
+
+sim_data |> 
+  ggplot(aes(at_data, cum_data)) +
+  geom_path()
+
+quants_sim <- tibble(
+  quantiles = c(0.025, 0.25, 0.50, 0.75, 0.975),
+  quant_data = qnorm(quantiles, mean_temp, sd_temp)
+)
+
+quants_sim |> 
+  ggplot(aes(quantiles, quant_data)) +
+  geom_path()
+  
+```
+
+#### 5.
+
+The pnorm calculates the cumulative density function which gives the probability of a variable being less than or equal to a value. 
+
+The qnorm is the inverse of the cumulative density function because it takes a vector of probablities as input and gives quantiles as output. It finds the value of our variable at the percentile(s) we provide.
+
+### The log-likelihood
+
+```{r}
+
+calculate_loglikelihood <- function(mu, sigma, data) {
+  loglikelihood <- sum(dnorm(data, mu, sigma, log = T))
+  return(loglikelihood)
+}
+
+sim_data <- tibble(
+  means = seq(23, 35, length.out = 500),
+  loglikelihoods = map_dbl(
+    .x = means,
+    .f = ~ calculate_loglikelihood(
+      mu = .x, sigma = sd_temp, data = groundhog_data$temperature
+    )
+  )
+)
+
+sim_data |> 
+  ggplot(aes(means, loglikelihoods)) +
+  geom_path()
+```
+
+The code above provides the log likelihood for mu as a function of a single guess for sigma. We see that because the provide a vector of different values for mu, but only one value for sigma.
+
+```{r}
+
+sim_data |> 
+  ggplot(aes(means, exp(loglikelihoods - max(loglikelihoods)))) +
+  geom_path()
+```
+
+### Confidence intervals
+
+First we create a function that takes the mean of N random values from a normal distribution and replicate this n times. 
+
+```{r}
+
+simulate_norm_means <- function(mu, sigma, n, num_repetitions = 10) {
+  sims <- replicate(num_repetitions, mean(rnorm(n, mu, sigma)))
+  return(sims)
+}
+
+sims <- tibble(
+  sims = simulate_norm_means(1, 2, 10, 1e4)
+)
+
+sims |> 
+  ggplot(aes(sims)) +
+  geom_histogram(fill = "royalblue", color = "black", alpha = 0.9)
+
+quantile(sims$sims, c(0.025, 0.975))
+```
+
+#### 1.
+
+Estimate MLE's for mu and sigma:
+
+```{r}
+
+mu <- mean(groundhog_data$temperature)
+var <- var(groundhog_data$temperature)
+sigma <- sqrt(var)
+
+temp_length <- length(groundhog_data$temperature)
+
+sims <- tibble(
+  sims = simulate_norm_means(mu, sigma, temp_length, num_repetitions = 1e4)
+)
+
+sims |> 
+  ggplot(aes(sims)) +
+  geom_histogram(fill = "royalblue", color = "black", alpha = 0.9)
+
+quantile(sims$sims, c(0.025, 0.975))
+```
+
+```{r}
+
+dt(x = 0.5, df = 5)
+
+pt(q = 1.5, df = 5)
+
+qt(p = 0.7, df = 5)
+
+rt(n = 2, df = 5)
+```
+
+
+
+

@@ -1,0 +1,160 @@
+---
+title: "Week 6: Regression"
+author: "Simen Løkken"
+format: html
+editor: visual
+---
+
+## Set environment and load packages
+
+```{r setup}
+
+knitr::opts_chunk$set(
+  warning = F,
+  message = F
+)
+```
+
+```{r}
+
+library(dplyr)
+library(ggplot2)
+library(janitor)
+library(readr)
+library(purrr)
+```
+
+## Module
+
+### Part A and B
+
+```{r}
+
+data <- tibble(
+  x = -10:10,
+  y = c(
+  -41.64, -11.04, -20.71, -3.89, -23.71, -18.42, -16.21, 
+  -23.22, -16.47, 15.72, -7.43, 14.1, -6, -12.04, 7.53, 23.26, 
+  28.44, 36.9, 5.45, 46.78, 22.58
+  )
+)
+
+data |> 
+  ggplot(aes(x, y)) +
+  geom_point() +
+  geom_abline(intercept = 0, slope= 1, color = "red")
+```
+
+```{r}
+
+calculate_sum_of_squares <- function(alpha, beta, x) {
+  predict_y <- alpha + beta * x
+  residual <- y - predict_y
+  resid_squared <- residual^2
+  sum_of_squares <- sum(resid_squared)
+  return(sum_of_squares)
+}
+
+calculate_sum_of_squares(0, 1, x)
+```
+
+Trying with a steeper line, beta = 1.5
+
+```{r}
+
+data |> 
+  ggplot(aes(x, y)) +
+  geom_point() +
+  geom_abline(intercept = 0, slope = 1.5, color = "red")
+
+calculate_sum_of_squares(0, 1.5, data$x)
+```
+
+Trying with beta = 2:
+
+```{r}
+
+data |> 
+  ggplot(aes(x, y)) +
+  geom_point() +
+  geom_abline(intercept = 0, slope = 2, color = "red")
+
+calculate_sum_of_squares(0, 2, data$x)
+```
+
+Trying with beta = 2.5:
+
+```{r}
+
+data |> 
+  ggplot(aes(x, y)) +
+  geom_point() +
+  geom_abline(intercept = 0, slope = 2.5, color = "red")
+
+calculate_sum_of_squares(0, 2.5, data$x)
+```
+
+### Part C
+
+```{r}
+
+mod <- lm(y ~ x, data = data)
+
+coef(mod)
+```
+
+### Part E
+
+```{r}
+
+olympic_data <- read_csv("https://www.math.ntnu.no/emner/ST2304/2024v/Module05/Times.csv")
+
+olympic_data <- olympic_data |> 
+  clean_names()
+
+olympic_data_sex_split <- olympic_data |> 
+  clean_names() |> 
+  pivot_longer(
+    cols = c(women_times, men_times),
+    names_to = "sex",
+    values_to = "times",
+  ) |> 
+  mutate(
+    sex = ifelse(sex == "women_times", "female", "male")
+  )
+```
+
+```{r}
+
+olympic_data_sex_split |> 
+  ggplot(aes(year, times, color = sex)) +
+  geom_point()
+```
+
+```{r}
+
+f_mod <- lm(year ~ women_times, data = olympic_data)
+
+m_mod <- lm(year ~ men_times, data = olympic_data)
+```
+
+```{r}
+
+olympic_data_sex_split |> 
+  ggplot(aes(year, times, color = sex)) +
+  geom_point()
+```
+
+### Part F
+
+```{r}
+
+predictions <- predict(m_mod, interval = "confidence") |> 
+  as_tibble()
+
+olympic_data |> 
+  ggplot(aes(year, men_times)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+
