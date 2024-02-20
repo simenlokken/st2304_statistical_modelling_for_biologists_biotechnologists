@@ -1,0 +1,247 @@
+---
+title: "Week 8 - Multiple Regression"
+author: "Simen Løkken"
+format: html
+editor: visual
+---
+
+## Set environment and load packages
+
+```{r setup}
+
+knitr::opts_chunk$set(
+  warning = F,
+  message = F
+)
+```
+
+```{r}
+
+library(dplyr)
+library(ggplot2)
+library(GGally)
+library(readr)
+library(tidyr)
+library(janitor)
+library(forcats)
+library(purrr)
+
+theme_set(theme_minimal())
+```
+
+## Part A
+
+First, we load the data and clean the data:
+
+```{r}
+
+alien_data <- read_csv("https://www.math.ntnu.no/emner/ST2304/2024v/Module07/Alien101LabData.csv")
+
+alien_data <- alien_data |> 
+  clean_names()
+```
+
+### A1.
+
+I can tell from the plots that temperature, rainfall and biomass is normally distributed, can be well explained by a linear function (linearity) and that they positively correlate with each other.
+
+```{r}
+
+ggpairs(alien_data)
+```
+
+### A2.
+
+Well, if I were to structure this experiment I would have let one row represent one day and let the temperature be the mean temperature of that day (either whole day or a part of the day, for example from 8-20) and rainfall be total amount of precipitation for that day. Since the data is structured that way here, I assumes it's from the same day.
+
+```{r}
+
+alien_data
+```
+
+We can also somewhat investigate this by using our knowledge of weather and climate. If we plot a scatter plot of temperature and rainfall we see that low the temperature is lower when it rains. This makes sense as the sun rays who warms are not passing through the clouds which hold the rain as when it's clear and not raining.
+
+```{r}
+
+alien_data |> 
+  ggplot(aes(temperature, rainfall)) +
+  geom_point()
+```
+
+### A3.
+
+Linear models:
+
+```{r}
+
+mod_1 <- lm(biomass ~ temperature, data = alien_data)
+mod_2 <- lm(biomass ~ rainfall, data = alien_data)
+```
+
+Model coefficients:
+
+```{r}
+
+mod_list <- list("biomass ~ temperature" = mod_1, "biomass ~ rainfall" = mod_2)
+
+map(mod_list, coef)
+```
+
+Model CI's:
+
+```{r}
+
+map(mod_list, confint)
+```
+
+How much of the variance is explained by the model?
+
+```{r}
+
+compute_r_squared <- function(model) {
+  r_squared <- summary(model)$r.squared
+  return(r_squared)
+}
+
+map(mod_list, compute_r_squared)
+```
+
+### A4.
+
+The results indicate that temperature has a positive effect on growth and that rainfall has a negative effect on growth.
+
+For a unit increase in temperature, biomass increases with 0.407. For a one unit increase in rainfall, biomass decreases with 0.007. However, the R squared are not "good" for either model (or, 0.62 is not bad) and I would not trust these models as they are right now. If I were to give a statement about conditions for ideal growth, it would be a place where it is warm and not rains a lot. The other way around it would have been a cold place with a lot of rain.
+
+For fun, I choose to run some computations on different values of temperature and rainfall to illustrate how the linear function works for each model:
+
+```{r}
+
+predict_y <- function(alpha, beta, x) {
+  y <- alpha + beta * x
+  return(y)
+}
+```
+
+Temperature:
+
+```{r}
+
+map_dbl(10:20, ~ predict_y(alpha = mod_1$coefficients[1], beta = mod_1$coefficients[2], .x))
+```
+
+Rainfall:
+
+```{r}
+
+rain_vec <- seq(750, 1250, length.out = 10)
+
+map_dbl(rain_vec, ~ predict_y(alpha = mod_2$coefficients[1], beta = mod_2$coefficients[2], .x))
+```
+
+### A5.
+
+```{r}
+
+weather_data <- read_csv("https://www.math.ntnu.no/emner/ST2304/2024v/Module07/AustraliaEnvironmentalData.csv")
+
+weather_data <- weather_data |> 
+  rename(
+    rainfall = Rain,
+    temperature = Temp
+  )
+```
+
+```{r}
+
+temp_preds <- predict(mod_1, newdata = weather_data, interval = "prediction") |> 
+  as_tibble()
+
+rain_preds <- predict(mod_2, newdata = weather_data, interval = "prediction") |> 
+  as_tibble()
+```
+
+### A6.
+
+```{r}
+
+source("https://www.math.ntnu.no/emner/ST2304/2024v/Module07/plotting_function.R")
+
+plotting_function(weather_data, temp_preds[, 1])
+```
+
+```{r}
+
+plotting_function(weather_data, rain_preds[, 1])
+```
+
+### A7.
+
+I would recommend the company to use its resources on the parts of Australia where it is warm, longest south and especially in the dry warm places such as upper, central Australia.
+
+## Part B
+
+### A1.
+
+```{r}
+
+mod_3 <- lm(biomass ~ rainfall + temperature, data = alien_data)
+
+coefs <- coef(mod_3)
+```
+
+### A2.
+
+The linear equation for this multiple regression would be:
+
+$Y = \alpha + \beta_1x_1 + \beta_2x_2$
+
+We add one more term which is the beta coefficient for the second explanatory variable and the x value we provide it.
+
+### B3.
+
+Temperature:
+
+```{r}
+
+alien_data |> 
+  ggplot(aes(temperature, biomass)) +
+  geom_point() +
+  geom_abline(
+    
+```
+
+
+```{r}
+
+# EXAMPLE:
+
+# make two plot window
+par(mfrow=c(1,2))
+
+# make the plot of temperature and biomass
+plot(alien_data$temperature, alien_data$biomass,
+     pch = 19, col = "red",
+     ylab = "Biomass", xlab = "Temp")
+
+# save the coefficient values as an object
+# contains 3 values, intercept, slope for temperature,
+# slope for rainfall
+coefs <- coef(ModelBoth)
+
+# use the coefficients to plot the line for temperature
+abline(a=coefs[1]+(mean(Alien$Rainfall)*coefs[3]), b=coefs[2], col="black")
+
+# make the plot of Rainfall and biomass
+plot(Alien$Rainfall, Alien$Biomass,
+     pch = 19, col = "blue",
+     ylab = "Biomass", xlab = "Rain")
+
+# save the coefficient values as an object
+# contains 3 values, intercept, slope for temperature,
+# slope for rainfall
+coefs <- coef(ModelBoth)
+
+# use the coefficients to plot the line for temperature
+abline(a=coefs[1]+(mean(Alien$Temperature)*coefs[2]), b=coefs[3], col="black")
+```
+
