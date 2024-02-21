@@ -21,10 +21,12 @@ library(dplyr)
 library(ggplot2)
 library(GGally)
 library(readr)
-library(tidyr)
 library(janitor)
 library(forcats)
 library(purrr)
+library(patchwork)
+library(gglm)
+library(broom)
 
 theme_set(theme_minimal())
 ```
@@ -76,6 +78,7 @@ Linear models:
 
 mod_1 <- lm(biomass ~ temperature, data = alien_data)
 mod_2 <- lm(biomass ~ rainfall, data = alien_data)
+
 ```
 
 Model coefficients:
@@ -176,7 +179,7 @@ plotting_function(weather_data, rain_preds[, 1])
 
 ### A7.
 
-I would recommend the company to use its resources on the parts of Australia where it is warm, longest south and especially in the dry warm places such as upper, central Australia.
+I would recommend the company to use its resources on the parts of Australia that corresponds to the dark blue/purple areas, where the model indicates lowest biomass. Central Australia, for example.
 
 ## Part B
 
@@ -199,49 +202,124 @@ We add one more term which is the beta coefficient for the second explanatory va
 
 ### B3.
 
-Temperature:
+The effect of temperature has been slightly reduced when including rainfall in the model (beta = 0.407 to beta = 0.363), and the effect of rainfall has been reduced as well (from beta = -0.007 to beta = -0.002).
 
 ```{r}
 
-alien_data |> 
-  ggplot(aes(temperature, biomass)) +
-  geom_point() +
-  geom_abline(
-    
+tidy(mod_1)
 ```
-
 
 ```{r}
 
-# EXAMPLE:
-
-# make two plot window
-par(mfrow=c(1,2))
-
-# make the plot of temperature and biomass
-plot(alien_data$temperature, alien_data$biomass,
-     pch = 19, col = "red",
-     ylab = "Biomass", xlab = "Temp")
-
-# save the coefficient values as an object
-# contains 3 values, intercept, slope for temperature,
-# slope for rainfall
-coefs <- coef(ModelBoth)
-
-# use the coefficients to plot the line for temperature
-abline(a=coefs[1]+(mean(Alien$Rainfall)*coefs[3]), b=coefs[2], col="black")
-
-# make the plot of Rainfall and biomass
-plot(Alien$Rainfall, Alien$Biomass,
-     pch = 19, col = "blue",
-     ylab = "Biomass", xlab = "Rain")
-
-# save the coefficient values as an object
-# contains 3 values, intercept, slope for temperature,
-# slope for rainfall
-coefs <- coef(ModelBoth)
-
-# use the coefficients to plot the line for temperature
-abline(a=coefs[1]+(mean(Alien$Temperature)*coefs[2]), b=coefs[3], col="black")
+confint(mod_1)
 ```
+
+```{r}
+
+summary(mod_1)$r.squared
+```
+
+```{r}
+
+tidy(mod_2)
+```
+
+```{r}
+
+confint(mod_2)
+```
+
+```{r}
+
+summary(mod_2)$r.squared
+```
+
+```{r}
+
+tidy(mod_3)
+```
+
+```{r}
+
+confint(mod_3)
+```
+
+```{r}
+
+summary(mod_3)$r.squared
+```
+
+### B4.
+
+R used maximum likelihood estimation (MLE) to find these estimates. MLE is a an approach where we use those estimates that are most likely given the data we have, by using probability density functions such as dnorm().
+
+### B5.
+
+I would argue that the fit is OK. The residuals are normally distributed, we know from previous plot that and the residuals vs.fitted that linearity assumption is held, and there are no clear outliers.
+
+```{r}
+
+gglm(mod_3)
+```
+
+### B6.
+
+```{r}
+
+new_data <- tibble(
+  temperature = weather_data$temperature,
+  rainfall = weather_data$rainfall
+)
+
+temp_rain_preds <- predict(
+  mod_3,
+  newdata = new_data,
+  interval = "prediction"
+) |> 
+  as_tibble()
+```
+
+```{r}
+
+plotting_function(weather_data, temp_rain_preds[, 1])
+```
+
+```{r}
+
+plotting_function(weather_data, temp_rain_preds[, 2])
+```
+
+```{r}
+
+plotting_function(weather_data ,temp_rain_preds[, 3])
+```
+
+### B7.
+
+My recommendation stays the same (use resources on areas with high biomass), but since the model is different, so is my answer. Central Australia is not that important anymore as the new model indicates that northern Australia is more inclined for uncontrolled Alien plant growth.
+
+I have to mention that even though we now have two explanatory variables (rain and temperature), the variance explained by this model is not much better than the model with only temperature. So, I'm not quite sure how much better these predictions are. Luckily, both models indicate that Northern Australia is better than Southern.
+
+## Part C
+
+### C1.
+
+I'm not a biology student so I don't know much about plants, but I'll try to reason around it.
+
+The model indicates that the alien species thrives in warm weather and do not enjoy too much rain. I believe we can say something about the relative influence of rain and temperature in the combined model as the intepretation is as I've understood it to be the effect of temperature when rain is held constant and vice versa. This is what I've based the first sentence on, that the plant enjoy warmth but not rain.
+
+Regarding if the variables we've used in the analysis are enough, I would say no because we've only explained about 60 % of the variance in biomass. There are most likely other factors that counts, such as sunlight, the quality of the soil and so on.
+
+### C2.
+
+We run multiple linear regression as opposed to simple linear regression individually so we can:
+
+1.  Control for confounding variables, i.e., we can control for the influence of rain when we assess the effect of temperature on biomass.
+2.  Real-world phenomena are rarely explained by one thing, so if we include several variables we are able to more accurately describe the world.
+
+## Part D
+
+I would like feedback on intepretation on statistical concepts. Overall I think this exercise went great, and I liked the increase in complexity on the coding part. I felt like you did remove some of the hints we got in previous weeks.
+
+
 
