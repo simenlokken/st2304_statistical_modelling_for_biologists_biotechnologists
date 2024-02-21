@@ -1,0 +1,120 @@
+---
+title: "Week 8: Multiple Linear Regression"
+author: "Simen Løkken"
+format: html
+editor: visual
+---
+
+## Set environment and load packages
+
+```{r setup}
+
+knitr::opts_chunk$set(
+  warning = F,
+  message = F
+)
+```
+
+```{r}
+
+library(dplyr)
+library(ggplot2)
+library(readr)
+library(GGally)
+```
+
+## Module
+
+```{r}
+
+schey_data <- read_csv("https://www.math.ntnu.no/emner/ST2304/2021v/Week07/ScheyData.csv")
+
+schey_data <- schey_data |> 
+  janitor::clean_names()
+```
+
+```{r}
+
+ggpairs(schey_data)
+```
+
+### Exercise
+
+#### 1.
+
+For those wondering, map is a just a for loop under the hood. See code chunk 2 for a way to do it with a "classic" for loop.
+
+```{r}
+
+mod_1 <- lm(dust ~ gape_size, data = schey_data)
+mod_2 <- lm(dust ~ body_size, data = schey_data)
+
+compute_r_squared <- function(model) {
+  r_squared <- summary(model)$r.squared
+  return(r_squared)
+}
+
+mod_list <- list("dust ~ gape_size" = mod_1, "dust ~ body_size" = mod_2)
+
+map(mod_list, compute_r_squared)
+```
+
+```{r}
+
+formulas <- list(gape_size = "dust ~ gape_size", body_size = "dust ~ body_size")
+
+r_squared_values <- list()
+
+for (var in names(formulas)) {
+  model <- lm(formulas[[var]], data = schey_data)
+  
+  r_squared <- compute_r_squared(model) 
+  
+  r_squared_values[[var]] <- r_squared
+}
+
+r_squared_values
+```
+
+The equation for each of the models would like this:
+
+1.  dust \~ gape_size = $$E(y) = 89.504 + 3.609x$$
+
+2.  dust \~ body_size = $$E(y) = 104.5 + 0.3x$$
+
+The $$\beta$$ indicates the effect magnitude of each variable (one unit increase), and the $$R^2$$ is very for body size, but much bigger for gape size.
+
+#### 2.
+
+```{r}
+
+mod_3 <- lm(dust ~ gape_size + body_size, data = schey_data)
+
+compute_r_squared(mod_3)
+```
+Regression equation:
+
+$$E(y) = 9.376 + 10.618x_1 + 4.509x_2$$
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
