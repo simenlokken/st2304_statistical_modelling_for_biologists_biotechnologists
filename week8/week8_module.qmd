@@ -96,10 +96,125 @@ Regression equation:
 
 $$E(y) = 9.376 + 10.618x_1 + 4.509x_2$$
 
+### Regression more generally
+
+```{r}
+
+olympic_times <- read_csv("https://www.math.ntnu.no/emner/ST2304/2019v/Week5/Times.csv")
+
+olympic_times <- olympic_times |> 
+  janitor::clean_names()
+
+mod_1_w <- lm(women_times ~ year, data = olympic_times)
+```
+
+```{r}
+
+olympic_times |> 
+  ggplot(aes(year, women_times)) +
+  geom_point() +
+  xlim(c(0, 2000)) +
+  geom_abline(
+    intercept = mod_1_w$coefficients[1],
+    slope = mod_1_w$coefficients[2],
+    color = "red"
+  )
+```
+
+### Exercise
+
+```{r}
+
+schey_data <- schey_data |> 
+  mutate(
+    body_size_ctr = body_size - mean(body_size),
+    gape_size_ctr = gape_size - mean(gape_size)
+  )
+
+# Base R solution, a for loop
+
+model_formulas <- list(
+  uncentered = "dust ~ body_size + gape_size",
+  centered = "dust ~ body_size_ctr + gape_size_ctr"
+)
+
+coefficients <- list()
+
+for (var in names(model_formulas)) {
+  model <- lm(model_formulas[[var]], data = schey_data)
+  coefficients[[var]] <- coef(model)
+}
+
+coefficients
+
+# Functional programming solution, map functions from purrr
+
+model_formulas <- list(
+  uncentered = "dust ~ body_size + gape_size",
+  centered = "dust ~ body_size_ctr + gape_size_ctr"
+)
+
+coefficients <- map(
+  .x = model_formulas,
+  .f = ~ {
+    model <- lm(.x, data = schey_data)
+    coefs <- coef(model)
+    coefs
+  }
+)
+
+coefficients
+```
+
+A standardized model:
+
+```{r}
+
+schey_data <- schey_data |> 
+  mutate(
+    body_size_scaled = scale(body_size),
+    gape_size_scaled = scale(gape_size)
+  )
+
+model_formulas <- list(
+  scaled = "dust ~ body_size_scaled + gape_size_scaled"
+)
+
+coefficients <- map(
+  .x = model_formulas,
+  .f = ~ {
+    model <- lm(.x, data = schey_data)
+    coefs <- coef(model)
+    coefs
+  }
+)
+
+coefficients
+```
+### Exercise polynomials
+
+```{r}
+
+data <- read_csv("https://www.math.ntnu.no/emner/ST2304/2019v/Week6/SimRegression.csv")
+
+model_formulas <- list(
+  linear = "y8 ~ x",
+  quadratic = "y8 ~ poly(x, 2)"
+)
+
+coefficients <- map(
+  .x = model_formulas,
+  .f = ~ {
+    model <- lm(.x, data = data)
+    r_squared <- summary(model)$r.squared
+    coefs <- coef(model)
+  }
+)
+
+coefficients
 
 
-
-
+```
 
 
 
