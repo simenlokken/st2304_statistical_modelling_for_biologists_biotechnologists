@@ -1,0 +1,264 @@
+---
+title: "Week 9 - Exercise"
+author: "Simen Løkken"
+format: html
+editor: visual
+---
+
+## Set environment and load packages
+
+```{r setup}
+
+knitr::opts_chunk$set(
+  warning = F,
+  message = F
+)
+```
+
+```{r}
+
+library(readr)
+library(dplyr)
+library(tibble)
+library(tidyr)
+library(forcats)
+library(ggplot2)
+library(GGally)
+library(gglm)
+```
+
+## Part A
+
+```{r}
+
+crops <- read_csv("https://www.math.ntnu.no/emner/ST2304/2024v/Module08/InsectData.csv")
+
+crops <- crops |> 
+  mutate(
+    spray = as_factor(spray)
+  )
+```
+
+### A1.
+
+The response variable is biomass (an indicator of how effective the spray is, an original count variable that's been transformed), and the explanatory variable is type of spray. The response variable is a double, and the explanatory variable is a factor (categorical).
+
+```{r}
+
+glimpse(crops)
+```
+
+```{r}
+
+ggpairs(crops)
+```
+
+### A2-A3.
+
+We want to investigate if there is a difference in means in biomass between the different types of spray to find the spray that is most effective for stopping insect pest on our crops. We also want to calculate the uncertainty for each type of spray to assess whether there actually is a difference and if that difference is meaningful enough to justify buying a more expensive spray, for example.
+
+## Part B
+
+### B1.
+
+I used spray A as a reference factor.
+
+```{r}
+
+crops <- crops |> 
+  mutate(
+    spray = relevel(spray, ref = "A")
+  )
+
+crops_mod <- lm(biomass ~ spray, data = crops)
+```
+
+### B2.
+
+The intercept estimate represents the mean biomass of spray A, and the other estimates represents the difference in mean biomass compared to spray A.
+
+```{r}
+
+crops_mod$coefficients
+```
+
+A very un-mathematically sound proof:
+
+```{r}
+
+crops |> 
+  group_by(spray) |> 
+  summarise(
+    mean_biomass = mean(biomass)
+  )
+```
+
+
+### B3.
+
+1. The Q-Q-plot confirms that the residuals are normally distributed.
+2. Indpendence of data is achieved through experiment design.
+3. Residuals vs. fitted plot confirms that the residuals have ~ zero mean. 
+4. Residuals vs. fitted plot confirms that there is equal variance between groups (good enough).
+
+Overall, I think the model fit is good, especially the equal variance and norm.dist residuals.
+
+```{r}
+
+gglm(crops_mod, theme = theme_minimal())
+```
+
+## Part C
+
+### Simulating the werewolf experiment
+
+Simulate data:
+
+```{r}
+
+werewolf <- tibble(
+  moon = as_factor(rep(c("Full moon", "New moon"), each = 100))
+) |> 
+  mutate(
+    hormone_lvl = ifelse(
+      moon == "Full moon", rnorm(length(moon), mean = 12, sd = 3),
+      rnorm(length(moon), mean = 8, sd = 1.5)
+    )
+  )
+```
+
+**BTW, I see your point on not using dplyr and tibbles in some cases, like this one where I have to operate with vectors and matrices for calculating the coefficients.**
+
+Calculate the coefficients using matrix algebra (sort of, cheated with some functions):
+
+```{r}
+
+Y <- werewolf$hormone_lvl
+X <- model.matrix(~ moon, data = werewolf)
+
+beta_hat <- solve(t(X) %*% X) %*% t(X) %*% Y
+
+beta_hat
+```
+
+Look's like hormone levels are low in werewolfs when there is a new moon, lol.
+
+Plot the results:
+
+```{r}
+
+werewolf |> 
+  ggplot(aes(moon, hormone_lvl)) +
+  geom_point() +
+  stat_summary(fun = mean, geom = "point", color = "red", size = 4, alpha = 1) +
+  stat_summary(fun = mean, geom = "line", aes(group = 1)) +
+  labs(
+    x = NULL,
+    y = "Hormone levels"
+  ) +
+  
+  theme(
+    panel.grid = element_blank()
+  )
+```
+
+## Part D
+
+### D1-D2.
+
+The output from our linear model tells us the difference in mean biomass compared to the reference level A. For example, spray B yields a deficit in biomass of 0.1160 compared to A while spray F yields an increase of 0.2579. On average, of course since this is a linear model.
+
+```{r}
+
+crops_mod
+```
+
+The CI's are here to actually be able to assess whether the difference in biomass depending on spray is meaningful.This is true because the intepretation of the CI is that if we repeated the experiment a lot of times, the results would lie between the given interval $a$ level times (often 95 %).
+
+```{r}
+
+confint(crops_mod)
+```
+
+### D3.
+
+Well, I like to read model outputs like this. I could have plotted it, but I personally are comfortable looking at the number estimates so it isn't always that I bother.. Some people however like plots, have to adapt it to the audience. Would have been something like this in that case:
+
+```{r}
+
+crops_mod |> 
+  broom::tidy(conf.int = TRUE) |> 
+  mutate(
+    term = as_factor(term)
+  ) |> 
+  ggplot(aes(term, estimate)) +
+  geom_point(size = 3) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2) +
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.y = element_blank()
+  ) +
+  labs(
+    y = "Estimate",
+    x = NULL,
+    caption = "Spray A = (Intercept)"
+    )
+```
+
+I have to state though that this plot could be misleading if you're not comfortable with the intepretation of a linear mode. You have to know that the reference is A and that the other estimates is the difference from the reference A.
+
+
+### D4.
+
+Because there is randomness involved in most biological (and other) processes, and we do not want to take decisions if we cannot say something about the uncertainty. If we take decisions without uncertainty measures, we do in my opinion not make good data driven decisions because our results could be random/to chance.
+
+## Part E
+
+### E1.
+
+A is reference spray, so all estimates are difference in means from A. Mean of A is 3.76 and mean of B is 3.76 + 0.116 = 3.876 and so on for the other sprays. 
+
+In order to minimize the risk of getting insect pest, we want to use the spray that maximizes insect death (that sounded rough), and that is spray F.
+
+```{r}
+
+crops_mod 
+```
+
+### E2.
+
+This was my answer on A2-3:
+
+**We want to investigate if there is a difference in means in biomass between the different types of spray to find the spray that is most effective for stopping insect pest on our crops. We also want to calculate the uncertainty for each type of spray to assess whether there actually is a difference and if that difference is meaningful enough to justify buying a more expensive spray, for example.**
+
+So, we know now that spray F is the most effective spray, but spray B is also highly effective. If we compare the CI's on both sprays, they overlap a lot! So, most likely they perform equally well. I would go for the cheapest option or the most environmental-friendly of them!
+
+R squared for the model is:
+
+```{r}
+
+summary(crops_mod)$r.squared
+```
+
+It explains almost 80 % of the variance, which is good, but I would also use knowledge about crops to investigate whether other things can be done to maximize crops.
+
+## Part F
+
+### F1.
+
+I would seek to find out again which spray is the most effective for hindering insect pests.
+
+I'm not a biologist so I'm shooting blind here, but:
+
+I would use treatments that not necessarily kill insects, but hinder pests in other ways (if that's possible?). So we maintain insects that are necessary in our ecosystems.
+
+One problem with the 1942 data is that no one actually knows what the different insects sprays were!! I would keep a log of which sprays I'm using.
+
+In the experimental planning of the project, we have to make sure that we choose crops at random, so we don't take one part of the crop. Maybe we can distinguish the crop into x parts and then use a random number generator or something. We also have to make sure it is independence, that these crop samples are independent. This is naturally done because we are using different sprays on them, and to make sure that some crop samples do not affect other samples (don't know exactly how that would be though).
+
+
+
+
+
+
+
