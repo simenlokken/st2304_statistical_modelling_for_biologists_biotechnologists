@@ -1,0 +1,223 @@
+---
+title: "Week 9 - Exercise"
+author: "Simen Løkken"
+format: html
+editor: visual
+editor_options: 
+  chunk_output_type: console
+---
+
+## Set environment and load packages
+
+```{r setup}
+
+knitr::opts_chunk$set(
+  warning = F,
+  message = F
+)
+```
+
+```{r}
+
+library(readr)
+library(tibble)
+library(dplyr)
+library(ggplot2)
+library(forcats)
+library(GGally)
+```
+
+## Part A
+
+```{r}
+
+yield <- read_csv("https://www.math.ntnu.no/emner/ST2304/2024v/Module09/FertilizerData.csv")
+
+yield <- yield |> 
+  janitor::clean_names() |> 
+  mutate(
+    fert = as_factor(fert),
+    fert = relevel(fert, ref = "F-"),
+    light = as_factor(light),
+    light = relevel(light, ref = "L-")
+  )
+```
+
+### A1.
+
+The response variable is biomass_m2 and the explanatory variables are fert and light. The response variable is numeric (double) and the explanatory variables are categorical (factors in R).
+
+Biomass looks normally distributed both as a collective and distinguished by fertilizer and light.
+
+```{r}
+
+ggpairs(yield)
+```
+
+### A2.
+
+The questions is:
+
+Does light and fertilizer affect biomass, and in that case, by how much?
+
+### A3.
+
+Intercept is 332, F+ is 141 and L+ is 78.
+
+The intercept is the y when x = 0, i.e., the mean of the control group. Have I understood it correctly if in that case that means the mean yield when there is no light and no fertilizer because I have set reference for both factors to be F- and L- ?
+
+If my understanding is correct, yield would is 332 + 141 when we add fertilizer and 331 + 78 when we light.
+
+```{r}
+
+yield_mod <- lm(biomass_m2 ~ fert + light, data = yield)
+
+yield_mod
+
+confint(yield_mod)
+```
+
+### A4.
+
+Our results indicate that fertilizer is more effective than light. However, light is also more effective than no treatment. The CI's also indicate that we can state that fertilizer is more effective even though there is some overlap.
+
+### A5.
+
+Have I understood it correctly if we can just add these two effects together since we assume no interaction? I.e., 141 + 78?
+
+### A6.
+
+The estimate from our model differs from the actual mean. It is most likely wrong because we have not accounted for the interaction between fertilizer and light.
+
+```{r}
+
+yield |> 
+  filter(fert == "F+" & light == "L+") |> 
+  summarise(
+    mean_biomass_m2 = mean(biomass_m2)
+  )
+```
+
+### A7.
+
+I'm not a biologist, but I assume that light increases the effectiveness of fertilizer due to some effect the sun rays have on the interaction between biomass and fertilizer.
+
+## Part B
+
+### B1.
+
+The intercept has slightly increased, the effect of fertilizer and light have been significantly reduced and we now have an interaction effect with both light and fertilizer.
+
+```{r}
+
+yield_mod_interact <- lm(biomass_m2 ~ fert * light, data = yield)
+
+yield_mod_interact
+
+confint(yield_mod_interact)
+```
+
+### B2.
+
+The interaction does tell us what the effect on biomass is if we apply both fertilizer and light treatment at the same time. This is different from the additive effect because we now account for how the two explanatory variables affect each other and not just assume that the add together.
+
+### B3.
+
+As the question is phrased as maximize their production and nothing is said about costs, I would recommend them to use both light and fertilizer as the point estimate of Fert+:Light+ is slightly higher than Fert+ alone. However, If I were to assess costs as well I would explain that the additional effect of light together with fertilizer is not much bigger than fertilizer alone, so they should do a cost-benefit analysis. I would also point out that the CI is quite wide for Fert+:Light+ and also very close to zero. The CI for Fert+ is further away from zero.
+
+### Part C.
+
+### C1.
+
+The response variable is log yield and the explanatory variables are so2 and water. Log yield and so2 is numeric (double) and water is a categorical (factor). Log yield is numeric because it represents the yield on a log scale which is a decimal number, water is a categorical because it represents a state of watering that can not be represented as a decimal or an integer, and so2 is a numeric because it represents a decimal number which is concentration of atmospheric so2.
+
+I was a little bit unsure of the so2 variable as it is a concentration of so2 but still it only has three poissible values. Would it be wrong to use this a factor instead? Would the resolution of this numeric value give us a good estimate of the effect of so2 concentration?
+
+```{r}
+
+log_yield <- read_csv("https://www.math.ntnu.no/emner/ST2304/2019v/Week9/PollutionData.csv")
+
+log_yield <- log_yield |> 
+  janitor::clean_names() |> 
+  mutate(
+    water = as_factor(water),
+    water = relevel(water, ref = "Stressed")
+  )
+```
+
+```{r}
+
+ggpairs(log_yield)
+```
+
+### C2.
+
+Question is:
+
+How does water and so2 concentration affect yield, and in that case, how much?
+
+### C3-C4.
+
+The intercept is the log yield when x = 0, so when so2 = 0 (or lowest value?) and water = Stressed because Stressed is the reference category.
+
+The beta of so2 is -4.109, indicating the magnitude of change in Y with a one-unit increase in so2.
+
+The beta of water is 0.178 with reference category Well-watered and indicates the difference in Y for Well-watered compared to stressed. More generally, it is the expected change in Y when moving from category A to category B.
+
+```{r}
+
+log_yield_mod <- lm(yield ~ so2 + water, data = log_yield)
+
+log_yield_mod
+
+confint(log_yield_mod)
+```
+
+```{r}
+
+log_yield |> 
+  ggplot(aes(so2, yield)) +
+  geom_point() +
+  theme_light() +
+  geom_abline(
+    aes(intercept = coef(log_yield_mod)[1],
+    slope = coef(log_yield_mod)[3],
+    color = "Stressed")
+  ) +
+  geom_abline(
+    aes(intercept = coef(log_yield_mod)[1],
+    slope = coef(log_yield_mod)[1] + coef(log_yield_mod)[2],
+    color = "Well-watered")
+  ) +
+  labs(
+    x = "Sulphur dioxide concentration",
+    y = "Yield (log)",
+    color = "Treatment"
+  )
+```
+
+## Part D.
+
+### D1.
+
+From data set 1, I stand by my recommendation in A4: fertilizer is more effective than light. However, when interactions were handled, I changed my recommendation to fertilizer and light and possible only fertilizer if a cost-benefit analysis is done and indicates that fertilizer only is better, but I cannot give a complete recommendation without knowing the costs. I also cannot say something about what other factors besides these included in the analyses mean for the yield.
+
+From data set 3, I recommended well-watered treatment and also keeping so2 levels as small as possible as they decrease yields. I cannot say however something about their interaction effect because we kept things simple and did not include an interaction effect.
+
+## Part E.
+
+### E1.
+
+It went fine. I think my statistical interpretation is quite good, but I haven't fully wrapped my head around categorical and numerical explainers together and especially with interaction effects.
+
+### E2.
+
+Maybe my answers in general, more in depth and better explanations.
+
+### E3.
+
+No, I don' think so.
+
+### E4.
+
+Intepretation of linear models with categorical and numerical explainers.

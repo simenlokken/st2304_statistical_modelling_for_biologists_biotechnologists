@@ -169,6 +169,17 @@ simulate_prediction <- function(alpha, beta, sigma, x, x_pred) {
   return(pred_mu)
 }
 
+rep_pred <- replicate(
+  1e3,
+  simulate_prediction(
+    alpha_hat,
+    beta_hat,
+    sigma_hat,
+    x = dragon_fire$size,
+    x_pred = 12
+  )
+)
+
 rep_pred <- tibble(
   rep_pred = replicate(
     1e3,
@@ -181,6 +192,8 @@ rep_pred <- tibble(
     )
   )
 )
+
+qplot(rep_pred$rep_pred)
 
 rep_pred |> 
   ggplot(aes(x = rep_pred)) +
