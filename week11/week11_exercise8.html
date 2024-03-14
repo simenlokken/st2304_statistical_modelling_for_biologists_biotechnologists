@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.450">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Week 11 - Exercise</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="week11_exercise8_files/libs/clipboard/clipboard.min.js"></script>
+<script src="week11_exercise8_files/libs/quarto-html/quarto.js"></script>
+<script src="week11_exercise8_files/libs/quarto-html/popper.min.js"></script>
+<script src="week11_exercise8_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="week11_exercise8_files/libs/quarto-html/anchor.min.js"></script>
+<link href="week11_exercise8_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="week11_exercise8_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="week11_exercise8_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="week11_exercise8_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="week11_exercise8_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Week 11 - Exercise</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<section id="set-environment-and-load-packages" class="level2">
+<h2 class="anchored" data-anchor-id="set-environment-and-load-packages">Set environment and load packages</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span>opts_chunk<span class="sc">$</span><span class="fu">set</span>(</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">warning =</span> F,</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">message =</span> F</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(forcats)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(GGally)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(gglm)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="fu">theme_set</span>(<span class="fu">theme_minimal</span>())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="part-a" class="level2">
+<h2 class="anchored" data-anchor-id="part-a">Part A</h2>
+<section id="a1." class="level3">
+<h3 class="anchored" data-anchor-id="a1.">A1.</h3>
+<p>We use model selection to think carefully about <strong>what</strong> we want to find out and how we need to structure our modelling process to (with our data in mind) find that out.</p>
+<p>For example, we know that there sex differences in ability exert to power against the ground and thereby jump. In order to find that out, we set two hypotheses: H1: sex differences, H0: no sex differences. We measure jump height, and see whether there are differences and use hypothesis testing to (and of course our estimate, mean jump height) to assess whether that our estimate is most likely by chance or not.</p>
+<p>If we want to investigate <strong>why</strong> there are sex differences, we can use an exploratory approach by measuring neuromuscular structures between the sexes to say something about how much different structures affect the jump height. Examples could be rate of force development (how quickly your nervous system uses to assert maximum force), muscle size (big often means more power) and muscle architecture (muscle can be structurally positioned/connected so their moment arms are shorter/longer and thus effect force output). In this case, we can more precisely say <strong>Why</strong> there are sex differences, i.e., an <strong>explanatory</strong> approach.</p>
+<p>Other important things are the balance between complexity and intepretation. A lot of covariates in the model can make intepretation difficult and may also introduce problems if covariates are correlated. Too few covariates and we won’t be able to explain something as precisely as we might like too.</p>
+</section>
+<section id="a2." class="level3">
+<h3 class="anchored" data-anchor-id="a2.">A2.</h3>
+<p>The aim of a confirmatory model (hypothesis testing in the example above) is to confirm something we believe to be true. For example, that there are sex differences in ability to jump high.</p>
+<p>The aim of an explanatory model is to find out more in detail what cases something and by that something that also predicts well. For example, we can quite precisely predict jump height if we know rate of force development, muscle size and muscle size architecture (together with overall body weight).</p>
+</section>
+<section id="a3." class="level3">
+<h3 class="anchored" data-anchor-id="a3.">A3.</h3>
+<p>First of all, decide on what you want to find out. Do you want to confirm something, do a hypothesis test. If you want to explain something and maybe predict, do an explanatory model.</p>
+</section>
+</section>
+<section id="part-b" class="level2">
+<h2 class="anchored" data-anchor-id="part-b">Part B</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>dinosaurs <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"https://www.math.ntnu.no/emner/ST2304/2024v/Module10/CloneData_2024v.csv"</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>dinosaurs <span class="ot">&lt;-</span> dinosaurs <span class="sc">|&gt;</span> </span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  janitor<span class="sc">::</span><span class="fu">clean_names</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">herbivore =</span> <span class="fu">as_factor</span>(herbivore)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="b1." class="level3">
+<h3 class="anchored" data-anchor-id="b1.">B1.</h3>
+<p>This question is explanatory because it gives us an index that tells us how successful the cloning was and other variables that is thought to influence the success of the cloning process. In other words, we are to find out <strong>which</strong> variables that affect this process.</p>
+</section>
+<section id="b2." class="level3">
+<h3 class="anchored" data-anchor-id="b2.">B2.</h3>
+<p>Bullet point list:</p>
+<ol type="1">
+<li>What type of response variable do I have? Is it categorical variable, a continuous variable, a TRUE/FALSE categorical variable? We must know this to choose a model.</li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(dinosaurs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 100
+Columns: 4
+$ success_index &lt;dbl&gt; 1.16, 1.90, 2.37, 1.42, 2.76, 0.16, 1.43, 3.13, 1.71, 0.…
+$ age           &lt;dbl&gt; 119.77, 121.49, 120.97, 120.58, 121.04, 119.46, 121.02, …
+$ size          &lt;dbl&gt; 49.20, 50.14, 49.35, 49.64, 49.19, 49.68, 50.35, 47.91, …
+$ herbivore     &lt;fct&gt; TRUE, FALSE, FALSE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE…</code></pre>
+</div>
+</div>
+<ol start="2" type="1">
+<li>Investigate explanatory variables, fcts, dbls, lgls, distributions. Is the variables suitable for a linear model for example?</li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggpairs</span>(dinosaurs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="week11_exercise8_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<ol start="3" type="1">
+<li>Based on 1 and 2, run a suitable model. Could be binomial, linear, poisson based on what you have in point 1 and 2.</li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>mod <span class="ot">&lt;-</span> <span class="fu">lm</span>(success_index <span class="sc">~</span> age <span class="sc">+</span> size <span class="sc">+</span> herbivore, <span class="at">data =</span> dinosaurs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ol start="4" type="1">
+<li>Interpret coefficients. Does they make sense, and how big/small is our estimate? We do this to actually say something sensible about our model that have practical significance for the phenomena we are investigating.</li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>mod</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = success_index ~ age + size + herbivore, data = dinosaurs)
+
+Coefficients:
+  (Intercept)            age           size  herbivoreTRUE  
+    -28.77719        0.56106       -0.74735       -0.06654  </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">confint</span>(mod)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                    2.5 %      97.5 %
+(Intercept)   -42.3859145 -15.1684651
+age             0.4565387   0.6655802
+size           -0.8518243  -0.6428816
+herbivoreTRUE  -0.2748023   0.1417158</code></pre>
+</div>
+</div>
+<ol start="5" type="1">
+<li>Check for assumptions for the given model. For a linear model for example: curvature, normally distributed residuals etc.</li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">gglm</span>(mod)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="week11_exercise8_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<ol start="6" type="1">
+<li>Check AIC/BIC and R squared for best predictive model/model most likely to be true and variance explained by the explanatory variables.</li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(mod)<span class="sc">$</span>r.squared</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.7673128</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">BIC</span>(mod)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 173.1699</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">AIC</span>(mod)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 160.144</code></pre>
+</div>
+</div>
+</section>
+<section id="b3." class="level3">
+<h3 class="anchored" data-anchor-id="b3.">B3.</h3>
+<ol type="1">
+<li>Type of response variable</li>
+</ol>
+<p>The variable is a dbl, a numeric value. Based on that, a linear model <strong>could</strong> be a good choice. We know also that a binomial model (dead/alive f.ex.) and a poisson model (counts) is not suitable.</p>
+<ol start="2" type="1">
+<li>Explanatory variables</li>
+</ol>
+<p>We observe that success_index, age and size are normally distributed. We also observe that size is negatively correlated with success_index and that age is positively correlated with success_index, and that on average herbivores have a slightly higher success_index (but very much overlapping). This further emphasizes that a linear model would be suitable.</p>
+<ol start="3" type="1">
+<li>Choose model based on 1 and 2.</li>
+</ol>
+<p>I choose to run a linear model based on a numeric response variable and normally distributed numeric explanatory variables.</p>
+<ol start="4" type="1">
+<li>Interpret coefficients</li>
+</ol>
+<p>Age increases the success_index by 0.56 with a one unit increase while size decreases the success_index with 0.75 by a one unit increase. The success_index is slightly lower for herbivores than not. Since the range of success_index is -1.28 to 3.43, an increase of 0.56 and decrease of 0.75 is quite large in my opinion, and one could definitely argue that these estimates tell us that these variables are important for the success_index!</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">range</span>(dinosaurs<span class="sc">$</span>success_index)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] -1.28  3.43</code></pre>
+</div>
+</div>
+<ol start="5" type="1">
+<li>Check for assumptions</li>
+</ol>
+<ul>
+<li>There is a linear relationship between the variables</li>
+<li>The residuals are normally distributed and have the same variance for any value of x.</li>
+<li>Independence - not quite sure? By design?</li>
+</ul>
+<ol start="6" type="1">
+<li>AIC, BIC and R squared</li>
+</ol>
+<p>The R-squared is 0.76 indicating that the model has a good fit - explaining 76 % of the variance in success_index.</p>
+<p>If I have understood BIC and AIC correctly, they don’t provide any value as absolute measures, it’s them relative to other scores from similar data but different models that matter. Interpreting them are therefore difficult, but I would do so if I for example had run a model with interactions or without one of the explanatory variables.</p>
+</section>
+</section>
+<section id="part-c" class="level2">
+<h2 class="anchored" data-anchor-id="part-c">Part C</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>dinosaurs_survey <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"https://www.math.ntnu.no/emner/ST2304/2024v/Module10/DinoData_2024v.csv"</span>)</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>dinosaurs_survey <span class="ot">&lt;-</span> dinosaurs_survey <span class="sc">|&gt;</span> </span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  janitor<span class="sc">::</span><span class="fu">clean_names</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="c1." class="level3">
+<h3 class="anchored" data-anchor-id="c1.">C1.</h3>
+<p>This question is a confirmatory one because it asks us to confirm a belief of the board members that bigger dinosaurs are more popular.</p>
+</section>
+<section id="c2-c3." class="level3">
+<h3 class="anchored" data-anchor-id="c2-c3.">C2-C3.</h3>
+<ol type="1">
+<li>Type of response variable</li>
+</ol>
+<p>The response variable popularity score is a continuous variable. This opens up for the possibility of a linear model, and also excludes some other models more suited for counts or categorical response (two-level) variables.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(dinosaurs_survey)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 100
+Columns: 2
+$ popularity_score &lt;dbl&gt; 79.55404, 79.69135, 79.00022, 78.48848, 76.60677, 82.…
+$ weight           &lt;dbl&gt; 50.05, 49.16, 49.57, 49.69, 49.45, 51.60, 49.64, 49.9…</code></pre>
+</div>
+</div>
+<ol start="2" type="1">
+<li>Investigate explanatory variable(s)</li>
+</ol>
+<p>The response variable is also a continuous variable. It is also normally distributed and seems to be positively but not strongly correlated with popularity score (our response). This also suggests that a linear model would an appropriate choice.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(dinosaurs_survey)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 100
+Columns: 2
+$ popularity_score &lt;dbl&gt; 79.55404, 79.69135, 79.00022, 78.48848, 76.60677, 82.…
+$ weight           &lt;dbl&gt; 50.05, 49.16, 49.57, 49.69, 49.45, 51.60, 49.64, 49.9…</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggpairs</span>(dinosaurs_survey)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="week11_exercise8_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<ol start="3" type="1">
+<li>Choose a model</li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>mod_2 <span class="ot">&lt;-</span> <span class="fu">lm</span>(popularity_score <span class="sc">~</span> weight, <span class="at">data =</span> dinosaurs_survey)</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>mod_2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = popularity_score ~ weight, data = dinosaurs_survey)
+
+Coefficients:
+(Intercept)       weight  
+    56.0412       0.4792  </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">confint</span>(mod_2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                  2.5 %     97.5 %
+(Intercept) 33.95751742 78.1248151
+weight       0.03761396  0.9207815</code></pre>
+</div>
+</div>
+<ol start="4" type="1">
+<li>Interpret coefficients</li>
+</ol>
+<p>Our model suggests that a one unit increase in weight, increase the popularity score by 0.48. The intercept also tells us that a dinosaur with size = 0 has a popularity score of 56 which does not make sense, but the intercept is not that important in this case so I won’t think more about it. Considering that the popularity score ranges from 0 to 100 but the data collected only ranges from 74 to 86, an increase in 0.48 is quite large in my opinion. This suggest that there is a considerable effect of weight, and it supports the thought of the board members that bigger dinosaurs are more popular.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">range</span>(dinosaurs_survey<span class="sc">$</span>popularity_score)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 74.22772 86.08347</code></pre>
+</div>
+</div>
+<ol start="5" type="1">
+<li>Check for assumptions</li>
+</ol>
+<p>Linearity is good, fat tails are present but else quite good, residuals seems normally distributed and there is equal variance for all values of X. Independence is taken care of by design?</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="fu">gglm</span>(mod_2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="week11_exercise8_files/figure-html/unnamed-chunk-16-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<ol start="6" type="1">
+<li>AIC/BIC and R-squared</li>
+</ol>
+<p>R-squared is very small, only explain 4.5 per cent of the variance. BIC and AIC is hard to intepret as they are relative measures.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(mod_2)<span class="sc">$</span>r.squared</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.04518402</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">AIC</span>(mod_2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 446.7318</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="fu">BIC</span>(mod_2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 454.5473</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="part-d" class="level2">
+<h2 class="anchored" data-anchor-id="part-d">Part D</h2>
+<section id="d1." class="level3">
+<h3 class="anchored" data-anchor-id="d1.">D1.</h3>
+<p>To maximize cloning success, I would use old fossils. However, even though the first model indicates that small dinosaurs have higher cloning success, smaller dinosaurs are also more popular. So I had to do some more investigating to say something about the size (cost-benefit relationship between popularity and cloning success). But to give an answer, old fossils would definitely be important.</p>
+</section>
+</section>
+<section id="part-e" class="level2">
+<h2 class="anchored" data-anchor-id="part-e">Part E</h2>
+<section id="e1." class="level3">
+<h3 class="anchored" data-anchor-id="e1.">E1.</h3>
+<p>Yes, a way to incorporate a cost-benefit between popularity score and size of the dinosaurs for the two models. I’m not quite sure how I exactly would have run it, would an interaction sufficed?</p>
+</section>
+<section id="e2." class="level3">
+<h3 class="anchored" data-anchor-id="e2.">E2.</h3>
+<p>I think I chose the right models and were thorough and correct in the process of doing modelling selection and the actual modelling. I’m not quite sure what I got wrong, but please tell me!</p>
+</section>
+<section id="e3." class="level3">
+<h3 class="anchored" data-anchor-id="e3.">E3.</h3>
+<p>Very cool exercise with not much tips and tricks but just questions to answers. Much more on our own.</p>
+</section>
+<section id="e4." class="level3">
+<h3 class="anchored" data-anchor-id="e4.">E4.</h3>
+<p>Not in particular.</p>
+</section>
+</section>
+<section id="e5." class="level2">
+<h2 class="anchored" data-anchor-id="e5.">E5.</h2>
+<p>I would like feedback on the exercise in general on the modelling selection process. I did it completely without looking at the help documents, so I’m excitied for how it went.</p>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>
